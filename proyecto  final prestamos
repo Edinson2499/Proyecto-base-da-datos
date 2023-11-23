@@ -1,0 +1,119 @@
+CREATE TABLE estudiantes (
+ codigo INT NOT NULL,
+ nombre VARCHAR(255) NOT NULL,
+ tipo_documento VARCHAR(255) NOT NULL,
+ PRIMARY KEY (codigo)
+);
+
+INSERT INTO estudiantes (codigo, nombre, tipo_documento) VALUES
+(1, 'Juan Pérez', 'CC'),
+(2, 'María García', 'TI'),
+(3, 'Pedro Rodríguez', 'PP'),
+(4, 'Sofía Hernández', 'CE'),
+(8, 'Daniela Gómez', 'PA'),
+(9, 'Diego Fernández', 'RC');
+
+CREATE TABLE recursos (
+ codigo INT NOT NULL, -- Cambiado de "codigo INT" a "codigo INT NOT NULL"
+ nombre VARCHAR(255) NOT NULL,
+ tipo_recurso VARCHAR(255) NOT NULL,
+ cantidad INT NOT NULL,
+ moneda VARCHAR(255) NOT NULL,
+ PRIMARY KEY (codigo)
+);
+
+INSERT INTO recursos (codigo, nombre, tipo_recurso, cantidad, moneda) VALUES
+(1, 'Beca de excelencia', 'Beca', 1000000, 'COP'),
+(2, 'Beca de investigación', 'Beca', 2000000, 'COP'),
+(3, 'Beca de estudio en el extranjero', 'Beca', 5000000, 'USD'),
+(4, 'Préstamo para estudiantes', 'Préstamo', 1000000, 'COP'),
+(5, 'Préstamo para docentes', 'Préstamo', 2000000, 'COP'),
+(6, 'Préstamo para administrativos', 'Préstamo', 3000000, 'COP');
+
+
+CREATE TABLE préstamos (
+  codigo INT NOT NULL,
+  codigo_estudiante INT NOT NULL,
+  codigo_recurso INT NOT NULL,
+  fecha_solicitud DATE NOT NULL,
+  fecha_entrega DATE NOT NULL,
+  monto INT NOT NULL,
+  PRIMARY KEY (codigo),
+  FOREIGN KEY (codigo_estudiante) REFERENCES estudiantes (codigo),
+  FOREIGN KEY (codigo_recurso) REFERENCES recursos (codigo),
+  UNIQUE (codigo_estudiante, codigo_recurso)
+);
+
+INSERT INTO préstamos (codigo_estudiante, codigo_recurso, fecha_solicitud, fecha_entrega, monto) VALUES
+(1, 1, '2023-08-01', '2023-08-22', 1000000),
+(2, 2, '2023-08-02', '2023-08-23', 2000000),
+(3, 3, '2023-08-03', '2023-08-24', 5000000),
+(4, 4, '2023-08-04', '2023-08-25', 1000000),
+(5, 5, '2023-08-05', '2023-08-26', 2000000);
+
+DELIMITER //
+
+-- Eliminar el procedimiento almacenado existente
+DROP PROCEDURE IF EXISTS SistemaDePrestamosMenu;
+
+-- Crear el nuevo procedimiento almacenado
+CREATE PROCEDURE SistemaDePrestamosMenu()
+BEGIN
+  DECLARE choice INT;
+
+  SistemaDePrestamosMenuLoop: LOOP
+    -- Mostrar opciones del menú
+    SELECT '1. Agregar un recurso' AS MenuOption;
+    SELECT '2. Agregar un estudiante' AS MenuOption;
+    SELECT '3. Prestar un recurso disponible' AS MenuOption;
+    SELECT '4. Consultar los préstamos de un estudiante' AS MenuOption;
+    SELECT '5. Consultar la información de un préstamo' AS MenuOption;
+    SELECT '6. Devolver un recurso prestado' AS MenuOption;
+    SELECT '0. Salir' AS MenuOption;
+
+    -- Pedir al usuario que elija una opción
+    SELECT 'Ingrese el número de la opción deseada:' INTO choice;
+    SET choice = IFNULL(choice, -1);
+
+    -- Ejecutar la opción seleccionada
+    CASE choice
+      WHEN 1 THEN
+        -- Agregar un recurso
+        INSERT INTO recursos (nombre, tipo_recurso, cantidad, moneda)
+        VALUES ('Beca de excelencia', 'Beca', 1000000, 'COP');
+
+      WHEN 2 THEN
+        -- Agregar un estudiante
+        INSERT INTO estudiantes (nombre, tipo_documento)
+        VALUES ('Juan Pérez', 'CC');
+
+      WHEN 3 THEN
+        -- Prestar un recurso disponible
+        SET @estudiante_codigo = 1;
+        SET @recurso_codigo = 1;
+        UPDATE préstamos SET fecha_solicitud = CURDATE() WHERE codigo = 1;
+
+      WHEN 4 THEN
+        -- Consultar los préstamos de un estudiante
+        SELECT * FROM préstamos WHERE codigo_estudiante = 1;
+
+      WHEN 5 THEN
+        -- Consultar la información de un préstamo
+        SELECT * FROM préstamos WHERE codigo= 1;
+
+      WHEN 6 THEN
+        -- Devolver un recurso prestado
+        UPDATE préstamos SET fecha_entrega = CURDATE() WHERE codigo = 1;
+
+      WHEN 0 THEN
+        LEAVE SistemaDePrestamosMenuLoop;
+      ELSE
+        SELECT 'Opción no válida. Inténtelo de nuevo.';
+    END CASE;
+  END LOOP SistemaDePrestamosMenuLoop;
+END //
+
+DELIMITER ;
+
+-- Llamar al procedimiento para iniciar el menú
+CALL SistemaDePrestamosMenu;
